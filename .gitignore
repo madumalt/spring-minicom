@@ -34,3 +34,6 @@ out/
 
 ### Java bin files ###
 bin/
+
+### H2 database files ###
+data/

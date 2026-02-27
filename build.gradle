@@ -8,7 +8,6 @@ buildscript {
 }
 
 apply plugin: 'java'
-apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
@@ -27,7 +26,16 @@ targetCompatibility = 21
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+
+    // Zalando Problem JSON
+    implementation 'org.zalando:problem-spring-web-starter:0.27.0'
+
+    // OpenAPI spec generation
+    implementation 'org.springdoc:springdoc-openapi-ui:1.8.0'
+
 	runtimeOnly 'com.h2database:h2'
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
     implementation("org.springframework.boot:spring-boot-starter-web")
     testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
