@@ -2,19 +2,30 @@ package com.intercom.spring.repository;
 
 import com.intercom.spring.domain.models.Conversation;
 import com.intercom.spring.domain.models.Message;
+import com.intercom.spring.domain.models.User;
 import com.intercom.spring.domain.exception.ChatRepositoryException;
 import com.intercom.spring.ports.outbound.ChatRepository;
+import com.intercom.spring.ports.outbound.UserRepository;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * Driven (outbound) adapter — H2 implementation of the ChatRepository.
- * Pure data-access only; no business logic belongs here.
+ * Driven (outbound) adapter — single H2 implementation of both
+ * ChatRepository and UserRepository outbound ports.
  */
 @Repository
-public class H2ChatRepository implements ChatRepository {
+public class H2Repository implements ChatRepository, UserRepository {
+
+  private static final RowMapper<User> userRowMapper = (rs, rowNum) -> new User(
+      rs.getLong("id"),
+      rs.getString("username"),
+      rs.getString("email"),
+      rs.getString("status"),
+      rs.getTimestamp("created_at"),
+      rs.getTimestamp("updated_at")
+  );
 
   private static final RowMapper<Conversation> conversationRowMapper = (rs, rowNum) -> new Conversation(
       rs.getLong("id"),
@@ -32,11 +43,35 @@ public class H2ChatRepository implements ChatRepository {
 
   private final JdbcTemplate jdbcTemplate;
 
-  public H2ChatRepository(JdbcTemplate jdbcTemplate) {
+  public H2Repository(JdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  // ── Conversation operations ──
+  // ── User operations (UserRepository) ──
+
+  @Override
+  public User saveUser(String username, String email) throws ChatRepositoryException {
+    String sql = "INSERT INTO users (username, email) VALUES (?, ?)";
+    jdbcTemplate.update(sql, username, email);
+    Long id = jdbcTemplate.queryForObject("SELECT MAX(id) FROM users", Long.class);
+    return jdbcTemplate.queryForObject("SELECT * FROM users WHERE id = ?", userRowMapper, id);
+  }
+
+  @Override
+  public boolean existsByUsername(String username) throws ChatRepositoryException {
+    String sql = "SELECT COUNT(*) FROM users WHERE username = ?";
+    Integer count = jdbcTemplate.queryForObject(sql, Integer.class, username);
+    return count != null && count > 0;
+  }
+
+  @Override
+  public boolean existsByEmail(String email) throws ChatRepositoryException {
+    String sql = "SELECT COUNT(*) FROM users WHERE email = ?";
+    Integer count = jdbcTemplate.queryForObject(sql, Integer.class, email);
+    return count != null && count > 0;
+  }
+
+  // ── Conversation operations (ChatRepository) ──
 
   @Override
   public List<Conversation> findConversationsByUserId(long userId) throws ChatRepositoryException {
@@ -53,7 +88,7 @@ public class H2ChatRepository implements ChatRepository {
     return count != null && count > 0;
   }
 
-  // ── Message operations ──
+  // ── Message operations (ChatRepository) ──
 
   @Override
   public Message saveMessage(long conversationId, long senderId, String content) throws ChatRepositoryException {
@@ -62,7 +97,6 @@ public class H2ChatRepository implements ChatRepository {
 
     long messageId = getLastInsertedMessageId();
 
-    // Create receipts for the other participant(s)
     List<Long> recipients = getOtherParticipants(conversationId, senderId);
     for (Long recipientId : recipients) {
       createReceipt(messageId, recipientId);
@@ -111,3 +145,4 @@ public class H2ChatRepository implements ChatRepository {
     jdbcTemplate.update("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", conversationId);
   }
 }
+
