@@ -13,6 +13,9 @@ import java.util.List;
  */
 public interface ChatAPI {
 
+  Conversation createConversation(String type, String name, List<Long> participantIds)
+      throws ChatRepositoryException, InvalidInputException;
+
   Message sendMessage(long conversationId, long senderId, String content)
       throws ChatRepositoryException, InvalidInputException;
 

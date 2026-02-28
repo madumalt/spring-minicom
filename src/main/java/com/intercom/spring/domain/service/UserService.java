@@ -1,10 +1,11 @@
 package com.intercom.spring.domain.service;
 
-import com.intercom.spring.domain.models.User;
-import com.intercom.spring.domain.exception.ChatRepositoryException;
 import com.intercom.spring.domain.exception.InvalidInputException;
+import com.intercom.spring.domain.exception.UserRepositoryException;
+import com.intercom.spring.domain.models.User;
 import com.intercom.spring.ports.inbound.UserAPI;
 import com.intercom.spring.ports.outbound.UserRepository;
+import java.util.List;
 import org.springframework.stereotype.Service;
 
 /**
@@ -21,7 +22,7 @@ public class UserService implements UserAPI {
     }
 
     @Override
-    public User signUp(String username, String email) throws ChatRepositoryException, InvalidInputException {
+    public User signUp(String username, String email) throws UserRepositoryException, InvalidInputException {
         validateUsername(username);
         validateEmail(email);
 
@@ -33,6 +34,26 @@ public class UserService implements UserAPI {
         }
 
         return userRepository.saveUser(username, email);
+    }
+
+    @Override
+    public User login(String username) throws UserRepositoryException, InvalidInputException {
+        if (username == null || username.isBlank()) {
+            throw new InvalidInputException("Username cannot be empty");
+        }
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            throw new InvalidInputException("User '" + username + "' not found");
+        }
+        return user;
+    }
+
+    @Override
+    public List<User> searchUsers(String query) throws UserRepositoryException {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        return userRepository.searchUsers(query);
     }
 
     private void validateUsername(String username) throws InvalidInputException {

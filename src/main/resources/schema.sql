@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
 -- Conversations table: represents a 1-to-1 chat thread between two users
 CREATE TABLE IF NOT EXISTS conversations (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  type ENUM('private', 'group') DEFAULT 'private',
+  name VARCHAR(255),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

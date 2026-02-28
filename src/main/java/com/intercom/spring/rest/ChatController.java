@@ -5,6 +5,7 @@ import com.intercom.spring.domain.models.Message;
 import com.intercom.spring.domain.exception.ChatRepositoryException;
 import com.intercom.spring.domain.exception.InvalidInputException;
 import com.intercom.spring.ports.inbound.ChatAPI;
+import com.intercom.spring.rest.dto.CreateConversationRequest;
 import com.intercom.spring.rest.dto.MarkAsReadRequest;
 import com.intercom.spring.rest.dto.SendMessageRequest;
 import java.util.List;
@@ -31,6 +32,20 @@ public class ChatController {
 
     public ChatController(ChatAPI chatAPI) {
         this.chatAPI = chatAPI;
+    }
+
+    /**
+     * Create a conversation.
+     * Private: exactly 2 participants, no name needed.
+     * Group: 2+ participants, name required.
+     * POST /api/conversations
+     */
+    @PostMapping("/conversations")
+    public ResponseEntity<Conversation> createConversation(
+            @RequestBody CreateConversationRequest request) throws ChatRepositoryException, InvalidInputException {
+        Conversation conversation = chatAPI.createConversation(
+            request.getType(), request.getName(), request.getParticipantIds());
+        return ResponseEntity.status(HttpStatus.CREATED).body(conversation);
     }
 
     /**
